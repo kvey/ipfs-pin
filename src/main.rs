@@ -10,7 +10,7 @@ use std::process::{Command};
 use regex::Regex;
 
 
-fn hash(req: &HttpRequest) -> HttpResponse {
+fn pin_hash(req: &HttpRequest) -> HttpResponse {
     let target_hash = req.match_info().get("hash").unwrap();
 
     let re = Regex::new(r"^[a-zA-Z0-9]+$").unwrap();
@@ -24,31 +24,31 @@ fn hash(req: &HttpRequest) -> HttpResponse {
                 .output()
                 .expect("failed to execute process");
 
-            println!("ipfs pin add {}", target_hash);
+            let stdout = std::str::from_utf8(&out.stdout)
+                .expect("Invalid utf8");
 
             HttpResponse::Ok()
-                .json(json!( {"res": std::str::from_utf8(&out.stdout).unwrap()}))
+                .json(json!({"res": stdout}))
         },
         false => {
             HttpResponse::BadRequest()
-                .json(json!( {"error": "Invalid hash"} ))
+                .json(json!({"error": "Invalid hash"} ))
         }
     }
 }
 
 
-
 fn main() {
     ::std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
-    let sys = actix::System::new("hello-world");
+    let sys = actix::System::new("ipfs-pin");
 
     server::new(|| {
         App::new()
             .middleware(middleware::Logger::default())
-            .resource("/hash/{hash}", |r| r.method(http::Method::POST).f(hash))
+            .resource("/pin/{hash}", |r| r.method(http::Method::POST).f(pin_hash))
     }).bind("0.0.0.0:9999")
-        .unwrap()
+        .expect("port or host bind failure")
         .start();
 
     println!("Started http server: 0.0.0.0:9999");
