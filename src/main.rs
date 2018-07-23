@@ -13,8 +13,6 @@ use regex::Regex;
 fn hash(req: &HttpRequest) -> HttpResponse {
     let target_hash = req.match_info().get("hash").unwrap();
 
-    println!("{}", target_hash);
-
     let re = Regex::new(r"^[a-zA-Z0-9]+$").unwrap();
 
     match re.is_match(target_hash) {
@@ -49,7 +47,6 @@ fn main() {
         App::new()
             .middleware(middleware::Logger::default())
             .resource("/hash/{hash}", |r| r.method(http::Method::POST).f(hash))
-            // .resource("/", |r| r.f(index))
     }).bind("0.0.0.0:9999")
         .unwrap()
         .start();
